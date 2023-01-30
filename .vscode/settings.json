@@ -1,8 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "~/Development/bluesky-adaptive"
-    ],
-    "black-formatter.args": [
-        "--line-length=115"
-    ]
-}
