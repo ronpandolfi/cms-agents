@@ -25,6 +25,9 @@ class CMSBaseAgent:
         """
         ...
 
+    def unpack_run(run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
+        ...
+
     @staticmethod
     def get_beamline_kwargs() -> dict:
         beamline_tla = "cms"
