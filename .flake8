@@ -5,6 +5,6 @@ exclude =
     build,
     dist,
     versioneer.py,
-    pta_agents/_version.py,
+    cms_agents/_version.py,
     docs/source/conf.py
 max-line-length = 115

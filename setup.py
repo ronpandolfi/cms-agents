@@ -36,14 +36,14 @@ with open(path.join(here, "requirements.txt")) as requirements_file:
 
 
 setup(
-    name="pta-agents",
+    name="cms-agents",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description="Agent development for project Photo Thermal Annealing ",
     long_description=readme,
     author="Brookhaven National Laboratory",
     author_email="pmaffetto@bnl.gov",
-    url="https://github.com/maffettone/pta-agents",
+    url="https://github.com/NSLS-II-CMS/cms-agents",
     python_requires=">={}".format(".".join(str(n) for n in min_version)),
     packages=find_packages(exclude=["docs", "tests"]),
     entry_points={
@@ -53,7 +53,7 @@ setup(
     },
     include_package_data=True,
     package_data={
-        "pta_agents": [
+        "cms_agents": [
             # When adding files here, remember to update MANIFEST.in as well,
             # or else they will not be included in the distribution on PyPI!
             # 'path/to/data_file',
