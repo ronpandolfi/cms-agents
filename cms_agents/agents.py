@@ -1,7 +1,7 @@
 import uuid
 from typing import Sequence, Tuple, Union
 
-import nslsii
+import nslsii.kafka_utils
 from bluesky_adaptive.agents.simple import SequentialAgentBase
 from numpy.typing import ArrayLike
 
@@ -15,7 +15,7 @@ class CMSBaseAgent:
         List of arguments to pass to plan from a point to measure.
         This is a good place to transform relative into absolute motor coords.
         """
-        ...
+        return ['pil2M']
 
     @staticmethod
     def measurement_plan_kwargs(point) -> dict:
@@ -23,10 +23,10 @@ class CMSBaseAgent:
         Construct dictionary of keyword arguments to pass the plan, from a point to measure.
         This is a good place to transform relative into absolute motor coords.
         """
-        ...
+        return {}
 
-    def unpack_run(run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
-        ...
+    def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
+        return 0, 0
 
     @staticmethod
     def get_beamline_kwargs() -> dict:
@@ -36,7 +36,7 @@ class CMSBaseAgent:
         )
         return dict(
             kafka_group_id=f"echo-{beamline_tla}-{str(uuid.uuid4())[:8]}",
-            kafka_bootstrap_servers=kafka_config["bootstrap_servers"],
+            kafka_bootstrap_servers=','.join(kafka_config["bootstrap_servers"]),
             kafka_consumer_config=kafka_config["runengine_producer_config"],
             kafka_producer_config=kafka_config["runengine_producer_config"],
             publisher_topic=f"{beamline_tla}.bluesky.adjudicators",
@@ -50,7 +50,9 @@ class CMSBaseAgent:
         )
 
 
-class SequentialAgent(SequentialAgentBase, CMSBaseAgent):
+class CMSSequentialAgent(CMSBaseAgent, SequentialAgentBase):
+    measurement_plan_name = 'count'
+
     def __init__(
         self,
         *,
