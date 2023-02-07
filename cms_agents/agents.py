@@ -4,7 +4,8 @@ from typing import Sequence, Tuple, Union
 import nslsii.kafka_utils
 from bluesky_adaptive.agents.simple import SequentialAgentBase
 from numpy.typing import ArrayLike
-from bluesky_queueserver_api.http import REManagerAPI
+from bluesky_queueserver_api.zmq import REManagerAPI
+
 
 class CMSBaseAgent:
     measurement_plan_name = ...
@@ -26,6 +27,7 @@ class CMSBaseAgent:
         return {}
 
     def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
+        print(run)
         return 0, 0
 
     @staticmethod
@@ -34,8 +36,8 @@ class CMSBaseAgent:
         kafka_config = nslsii.kafka_utils._read_bluesky_kafka_config_file(
             config_file_path="/etc/bluesky/kafka.yml"
         )
-        qs = REManagerAPI(http_server_uri=f"https://qserver.nsls2.bnl.gov/{beamline_tla}")
-        qs.set_authorization_key(api_key=None)
+        qs = REManagerAPI(zmq_control_addr='tcp://xf11bm-ws1.nsls2.bnl.local:60615')
+
         return dict(
             kafka_group_id=f"echo-{beamline_tla}-{str(uuid.uuid4())[:8]}",
             kafka_bootstrap_servers=','.join(kafka_config["bootstrap_servers"]),
