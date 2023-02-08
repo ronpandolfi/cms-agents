@@ -8,32 +8,32 @@ import nslsii.kafka_utils
 from tiled.client import from_profile
 
 
-def give_advice(bluesky_run):
-    print(f"give advice on run {bluesky_run}")
-    advice = {
+def reduce_run(bluesky_run):
+    print(f"give reduced on run {bluesky_run}")
+    reduced = {
         "next big thing": "avocado toast"
     }
 
-    return advice
+    return reduced
 
 
-def publish_advice_documents(advice, advice_publisher):
-    
+def publish_reduced_documents(reduced, reduced_publisher):
 
 
-def respond_to_stop_with_advice():
+
+def respond_to_stop_with_reduced():
 
     kafka_config = nslsii.kafka_utils._read_bluesky_kafka_config_file(config_file_path="/etc/bluesky/kafka.yml")
 
     cms_tiled_client = from_profile("cms")
 
-    advice_publisher = Publisher(
+    reduced_publisher = Publisher(
         topic="",
         bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
         producer_config=kafka_config["producer_config"]
     )
 
-    def on_stop_give_advice(name, doc):
+    def on_stop_reduce_run(name, doc):
         print(
             f"{datetime.datetime.now().isoformat()} document: {name}\n"
             f"contents: {pprint.pformat(doc)}\n"
@@ -43,8 +43,8 @@ def respond_to_stop_with_advice():
             run_start_id = doc["run_start"]
             print(f"found run_start id {run_start_id}")
             bluesky_run = cms_tiled_client[run_start_id]
-            advice = give_advice(bluesky_run)
-            publish__advice_documents(advice, advice_publisher)
+            reduced = reduce_run(bluesky_run)
+            publish_documents(reduced, reduced_publisher)
         else:
             pass
 
@@ -65,4 +65,4 @@ def respond_to_stop_with_advice():
 
 
 if __name__ == "__main__":
-    respond_to_stop_with_advice()
+    respond_to_stop_with_reduced()
