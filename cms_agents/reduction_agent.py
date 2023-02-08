@@ -6,7 +6,7 @@ import time as ttime
 from bluesky_kafka import Publisher, RemoteDispatcher
 import nslsii.kafka_utils
 
-from ophyd.utils import data_shape, data_type
+from ophyd.utils.epics_pvs import data_shape, data_type
 from event_model import compose_run
 
 from tiled.client import from_profile
@@ -71,9 +71,10 @@ def respond_to_stop_with_reduced():
     cms_tiled_client = from_profile("cms")
 
     reduced_publisher = Publisher(
-        topic="cms.reduced.bluesky_documents",
+        key='',
+        topic="cms.reduced.bluesky.documents",
         bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
-        producer_config=kafka_config["producer_config"],
+        producer_config=kafka_config["runengine_producer_config"],
     )
 
     def on_stop_reduce_run(name, doc):
@@ -83,8 +84,8 @@ def respond_to_stop_with_reduced():
             run_start_id = doc["run_start"]
             print(f"found run_start id {run_start_id}")
             bluesky_run = cms_tiled_client[run_start_id]
-            reduced = reduce_run(bluesky_run)
-            publish_reduced_documents(reduced, reduced_publisher)
+            reduced, metadata = reduce_run(bluesky_run)
+            publish_reduced_documents(reduced, metadata, reduced_publisher)
         else:
             pass
 
