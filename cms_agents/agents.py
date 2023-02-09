@@ -16,7 +16,7 @@ class CMSBaseAgent:
         List of arguments to pass to plan from a point to measure.
         This is a good place to transform relative into absolute motor coords.
         """
-        return ['pil2M']
+        return [["pilatus2M"]]
 
     @staticmethod
     def measurement_plan_kwargs(point) -> dict:
@@ -24,7 +24,7 @@ class CMSBaseAgent:
         Construct dictionary of keyword arguments to pass the plan, from a point to measure.
         This is a good place to transform relative into absolute motor coords.
         """
-        return {}
+        return dict(num=point)
 
     def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
         print(run)
@@ -45,9 +45,9 @@ class CMSBaseAgent:
             kafka_producer_config=kafka_config["runengine_producer_config"],
             publisher_topic=f"{beamline_tla}.bluesky.adjudicators",
             subscripion_topics=[
-                f"{beamline_tla}.bluesky.runengine.documents",
+                f"{beamline_tla}.bluesky.reduced.documents",
             ],
-            data_profile_name=f"{beamline_tla}",
+            data_profile_name=f"{beamline_tla}_bluesky_sandbox",
             agent_profile_name=f"{beamline_tla}_bluesky_sandbox",
             qserver=qs,
         )
