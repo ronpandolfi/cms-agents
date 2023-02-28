@@ -60,7 +60,7 @@ class CMSBaseAgent:
         return dict(
             kafka_consumer=kafka_consumer,
             kafka_producer=kafka_producer,
-            tiled_data_node=tiled.client.from_profile(f"{beamline_tla}"),
+            tiled_data_node=tiled.client.from_profile(f"{beamline_tla}_bluesky_sandbox"),
             tiled_agent_node=tiled.client.from_profile(f"{beamline_tla}_bluesky_sandbox"),
             qserver=qs,
         )
