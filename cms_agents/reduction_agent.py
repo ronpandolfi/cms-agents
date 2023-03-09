@@ -133,7 +133,7 @@ def get_args():
         "--testing",
         default=False,
         action="store_true",
-        help="reduction_agent will not generate output"
+        help="reduction_agent will send output only to the console"
     )
 
     return parser.parse_args()
