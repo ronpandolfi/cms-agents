@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import pprint
 import uuid
@@ -64,26 +65,36 @@ def publish_reduced_documents(reduced, metadata, reduced_publisher):
     reduced_publisher("stop", cr.compose_stop())
 
 
-def respond_to_stop_with_reduced():
+def respond_to_stop_with_reduced(consumer_topic, testing):
 
     kafka_config = nslsii.kafka_utils._read_bluesky_kafka_config_file(config_file_path="/etc/bluesky/kafka.yml")
 
     cms_tiled_client = from_profile("cms")
-    cms_sandbox_tiled_client = from_profile('cms_bluesky_sandbox')
-    reduced_publisher = Publisher(
-        key='',
-        topic="cms.bluesky.reduced.documents",
-        bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
-        producer_config=kafka_config["runengine_producer_config"],
-    )
+    
+    if testing:
+        def do_both(name, doc):
+            print(
+                f"{datetime.datetime.now().isoformat()} output document: {name}\n"
+                f"contents: {pprint.pformat(doc)}\n"
+            )
+    else:
+        cms_sandbox_tiled_client = from_profile("cms_bluesky_sandbox")
+        reduced_publisher = Publisher(
+            key="",
+            topic="cms.bluesky.reduced.documents",
+            bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
+            producer_config=kafka_config["runengine_producer_config"],
+        )
 
-    def do_both(name, doc):
-        cms_sandbox_tiled_client.v1.insert(name, doc)
-        reduced_publisher(name, doc)
-
+        def do_both(name, doc):
+            cms_sandbox_tiled_client.v1.insert(name, doc)
+            reduced_publisher(name, doc)
 
     def on_stop_reduce_run(name, doc):
-        print(f"{datetime.datetime.now().isoformat()} document: {name}\n" f"contents: {pprint.pformat(doc)}\n")
+        print(
+            f"{datetime.datetime.now().isoformat()} document: {name}\n"
+            f"contents: {pprint.pformat(doc)}\n"
+        )
         if name == "stop":
             # look up the results of this run
             run_start_id = doc["run_start"]
@@ -99,7 +110,7 @@ def respond_to_stop_with_reduced():
     unique_group_id = f"reduce-{str(uuid.uuid4())[:8]}"
 
     kafka_dispatcher = RemoteDispatcher(
-        topics=["cms.bluesky.runengine.documents"],
+        topics=[consumer_topic],
         bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
         group_id=unique_group_id,
         consumer_config=kafka_config["runengine_producer_config"],
@@ -109,5 +120,25 @@ def respond_to_stop_with_reduced():
     kafka_dispatcher.start()
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--consumer-topic",
+        default="cms.bluesky.runengine.documents",
+        help="Kafka topic for reduction_agent input",
+    )
+
+    parser.add_argument(
+        "--testing",
+        default=False,
+        action="store_true",
+        help="reduction_agent will not generate output"
+    )
+
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    respond_to_stop_with_reduced()
+    args = get_args()
+    respond_to_stop_with_reduced(**vars(args))
