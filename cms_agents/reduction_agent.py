@@ -65,14 +65,14 @@ def publish_reduced_documents(reduced, metadata, reduced_publisher):
     reduced_publisher("stop", cr.compose_stop())
 
 
-def respond_to_stop_with_reduced(consumer_topic, testing):
+def respond_to_stop_with_reduced(consumer_topic: str, testing: bool = False):
 
     kafka_config = nslsii.kafka_utils._read_bluesky_kafka_config_file(config_file_path="/etc/bluesky/kafka.yml")
 
     cms_tiled_client = from_profile("cms")
     
     if testing:
-        def do_both(name, doc):
+        def output_reduced_document(name, doc):
             print(
                 f"{datetime.datetime.now().isoformat()} output document: {name}\n"
                 f"contents: {pprint.pformat(doc)}\n"
@@ -86,7 +86,7 @@ def respond_to_stop_with_reduced(consumer_topic, testing):
             producer_config=kafka_config["runengine_producer_config"],
         )
 
-        def do_both(name, doc):
+        def output_reduced_document(name, doc):
             cms_sandbox_tiled_client.v1.insert(name, doc)
             reduced_publisher(name, doc)
 
@@ -101,7 +101,7 @@ def respond_to_stop_with_reduced(consumer_topic, testing):
             print(f"found run_start id {run_start_id}")
             bluesky_run = cms_tiled_client[run_start_id]
             reduced, metadata = reduce_run(bluesky_run)
-            publish_reduced_documents(reduced, metadata, do_both)
+            publish_reduced_documents(reduced, metadata, output_reduced_document)
         else:
             pass
 
