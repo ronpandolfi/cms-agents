@@ -4,7 +4,9 @@ from typing import List, Sequence, Tuple, Union
 import nslsii.kafka_utils
 import numpy as np
 import tiled
+import torch
 from bluesky_adaptive.agents.base import Agent, AgentConsumer
+from bluesky_adaptive.agents.botorch import SingleTaskGPAgentBase
 from bluesky_adaptive.agents.simple import SequentialAgentBase
 from bluesky_kafka import Publisher
 from bluesky_queueserver_api.zmq import REManagerAPI
@@ -127,3 +129,18 @@ class CMSSequentialAgent(CMSBaseAgent, SequentialAgentBase):
         _default_kwargs = self.get_beamline_objects()
         _default_kwargs.update(kwargs)
         super().__init__(sequence=sequence, relative_bounds=relative_bounds, **_default_kwargs)
+
+
+class CMSSingleTaskAgent(CMSBaseAgent, SingleTaskGPAgentBase):
+    def __init__(self, *, bounds: ArrayLike, **kwargs):
+        """Single Task GP based Bayesian Optimization
+
+        Parameters
+        ----------
+        bounds : ArrayLike
+            A `2 x d` tensor of lower and upper bounds for each column of independent vars
+        """
+        _default_kwargs = self.get_beamline_objects()
+        _default_kwargs.update(kwargs)
+        bounds = torch.tensor(bounds)
+        super().__init__(bounds=bounds, **_default_kwargs)
