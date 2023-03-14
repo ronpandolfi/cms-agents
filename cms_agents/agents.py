@@ -1,16 +1,37 @@
 import uuid
+from abc import ABC
 from typing import List, Sequence, Tuple, Union
 
 import nslsii.kafka_utils
+import numpy as np
 import tiled
-from bluesky_adaptive.agents.base import AgentConsumer
+from bluesky_adaptive.agents.base import Agent, AgentConsumer
+from bluesky_adaptive.agents.botorch import SingleTaskGPAgentBase
 from bluesky_adaptive.agents.simple import SequentialAgentBase
 from bluesky_kafka import Publisher
 from bluesky_queueserver_api.zmq import REManagerAPI
 from numpy.typing import ArrayLike
 
 
-class CMSBaseAgent:
+class CMSBaseAgent(Agent, ABC):
+    """Base agent to interface with output of SciAnalysis stored in sandbox databroker
+    Parameters
+    ----------
+    independent_key : str
+        Name of the independent variable in the Bluesky documents. For instance, if you were optimizing over
+        a temperature trajectory, you might set this to 'temperatures'.
+        This parameter is registered to the REST server, and can be changed dynamically.
+    target_key : str
+        Name of the target (dependent) variable in the Bluesky documents. For instance, if you were optimizing the
+        value of an particular region of interest, you might set this to 'ROI1'.
+        This parameter is registered to the REST server, and can be changed dynamically.
+    """
+
+    def __init__(self, *args, independent_key: str, target_key: str, **kwargs):
+        self._independent_key = independent_key
+        self._target_key = target_key
+        super().__init__(*args, **kwargs)
+
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:
         """Default measurement plan is a count on the pilatus, for a given num
 
@@ -30,8 +51,28 @@ class CMSBaseAgent:
         return "count", [["pilatus2M"]], dict(num=point)
 
     def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
-        print(run)
-        return 0, 0
+        return np.array(run.primary.data[self.independent_key]), np.array(run.primary.data[self.target_key])
+
+    @property
+    def independent_key(self):
+        return self._independent_key
+
+    @independent_key.setter
+    def independent_key(self, value: str):
+        self._independent_key = value
+
+    @property
+    def target_key(self):
+        return self._target_key
+
+    @target_key.setter
+    def target_key(self, value: str):
+        self._target_key = value
+
+    def server_registrations(self) -> None:
+        self._register_property("independent_key")
+        self._register_property("target_key")
+        return super().server_registrations()
 
     @staticmethod
     def get_beamline_objects() -> dict:
@@ -99,3 +140,25 @@ class CMSSequentialAgent(CMSBaseAgent, SequentialAgentBase):
         _default_kwargs = self.get_beamline_objects()
         _default_kwargs.update(kwargs)
         super().__init__(sequence=sequence, relative_bounds=relative_bounds, **_default_kwargs)
+
+
+class CMSSingleTaskAgent(CMSBaseAgent, SingleTaskGPAgentBase):
+    def __init__(self, *, bounds: ArrayLike, **kwargs):
+        """Single Task GP based Bayesian Optimization
+
+        Parameters
+        ----------
+        bounds : ArrayLike
+            A `2 x d` tensor of lower and upper bounds for each column of independent vars
+
+        Examples
+        --------
+        A simple example of this that would optimize over three points of tempterature follows:
+        >>> bounds = np.array([[100., 500.] for _ in range(3)])
+        >>> agent = CMSSingleTaskAgent(bounds=bounds, independent_key=temperatures, target_key="ROI4")
+        >>> agent.start()
+
+        """
+        _default_kwargs = self.get_beamline_objects()
+        _default_kwargs.update(kwargs)
+        super().__init__(bounds=bounds, **_default_kwargs)
