@@ -1,4 +1,5 @@
 import uuid
+from abc import ABC
 from typing import List, Sequence, Tuple, Union
 
 import nslsii.kafka_utils
@@ -12,7 +13,7 @@ from bluesky_queueserver_api.zmq import REManagerAPI
 from numpy.typing import ArrayLike
 
 
-class CMSBaseAgent(Agent):
+class CMSBaseAgent(Agent, ABC):
     """Base agent to interface with output of SciAnalysis stored in sandbox databroker"""
 
     def __init__(self, *args, **kwargs):
