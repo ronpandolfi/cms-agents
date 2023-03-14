@@ -150,6 +150,14 @@ class CMSSingleTaskAgent(CMSBaseAgent, SingleTaskGPAgentBase):
         ----------
         bounds : ArrayLike
             A `2 x d` tensor of lower and upper bounds for each column of independent vars
+
+        Examples
+        --------
+        A simple example of this that would optimize over three points of tempterature follows:
+        >>> bounds = np.array([[100., 500.] for _ in range(3)])
+        >>> agent = CMSSingleTaskAgent(bounds=bounds, independent_key=temperatures, target_key="ROI4")
+        >>> agent.start()
+
         """
         _default_kwargs = self.get_beamline_objects()
         _default_kwargs.update(kwargs)
