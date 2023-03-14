@@ -2,15 +2,23 @@ import uuid
 from typing import List, Sequence, Tuple, Union
 
 import nslsii.kafka_utils
+import numpy as np
 import tiled
-from bluesky_adaptive.agents.base import AgentConsumer
+from bluesky_adaptive.agents.base import Agent, AgentConsumer
 from bluesky_adaptive.agents.simple import SequentialAgentBase
 from bluesky_kafka import Publisher
 from bluesky_queueserver_api.zmq import REManagerAPI
 from numpy.typing import ArrayLike
 
 
-class CMSBaseAgent:
+class CMSBaseAgent(Agent):
+    """Base agent to interface with output of SciAnalysis stored in sandbox databroker"""
+
+    def __init__(self, *args, **kwargs):
+        self._independent_key = None
+        self._target_key = None
+        super().__init__(*args, **kwargs)
+
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:
         """Default measurement plan is a count on the pilatus, for a given num
 
@@ -30,8 +38,28 @@ class CMSBaseAgent:
         return "count", [["pilatus2M"]], dict(num=point)
 
     def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
-        print(run)
-        return 0, 0
+        return np.array(run.primary.data[self.independent_key]), np.array(run.primary.data[self.target_key])
+
+    @property
+    def independent_key(self):
+        return self._independent_key
+
+    @independent_key.setter
+    def independent_key(self, value: str):
+        self._independent_key = value
+
+    @property
+    def target_key(self):
+        return self._target_key
+
+    @target_key.setter
+    def target_key(self, value: str):
+        self._target_key = value
+
+    def server_registrations(self) -> None:
+        self._register_property("independent_key")
+        self._register_property("target_key")
+        return super().server_registrations()
 
     @staticmethod
     def get_beamline_objects() -> dict:
