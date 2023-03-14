@@ -4,7 +4,6 @@ from typing import List, Sequence, Tuple, Union
 import nslsii.kafka_utils
 import numpy as np
 import tiled
-import torch
 from bluesky_adaptive.agents.base import Agent, AgentConsumer
 from bluesky_adaptive.agents.botorch import SingleTaskGPAgentBase
 from bluesky_adaptive.agents.simple import SequentialAgentBase
@@ -142,5 +141,4 @@ class CMSSingleTaskAgent(CMSBaseAgent, SingleTaskGPAgentBase):
         """
         _default_kwargs = self.get_beamline_objects()
         _default_kwargs.update(kwargs)
-        bounds = torch.tensor(bounds)
         super().__init__(bounds=bounds, **_default_kwargs)
