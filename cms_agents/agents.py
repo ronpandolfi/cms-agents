@@ -14,11 +14,22 @@ from numpy.typing import ArrayLike
 
 
 class CMSBaseAgent(Agent, ABC):
-    """Base agent to interface with output of SciAnalysis stored in sandbox databroker"""
+    """Base agent to interface with output of SciAnalysis stored in sandbox databroker
+    Parameters
+    ----------
+    independent_key : str
+        Name of the independent variable in the Bluesky documents. For instance, if you were optimizing over
+        a temperature trajectory, you might set this to 'temperatures'.
+        This parameter is registered to the REST server, and can be changed dynamically.
+    target_key : str
+        Name of the target (dependent) variable in the Bluesky documents. For instance, if you were optimizing the
+        value of an particular region of interest, you might set this to 'ROI1'.
+        This parameter is registered to the REST server, and can be changed dynamically.
+    """
 
-    def __init__(self, *args, **kwargs):
-        self._independent_key = None
-        self._target_key = None
+    def __init__(self, *args, independent_key: str, target_key: str, **kwargs):
+        self._independent_key = independent_key
+        self._target_key = target_key
         super().__init__(*args, **kwargs)
 
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:
