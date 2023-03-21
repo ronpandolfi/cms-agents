@@ -87,13 +87,13 @@ class CMSBaseAgent(Agent, ABC):
                 f"{beamline_tla}.bluesky.reduced.documents",
             ],
             consumer_config=kafka_config["runengine_producer_config"],
-            bootstrap_servers=kafka_config["bootstrap_servers"],
+            bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
             group_id=f"echo-{beamline_tla}-{str(uuid.uuid4())[:8]}",
         )
 
         kafka_producer = Publisher(
             topic=f"{beamline_tla}.bluesky.adjudicators",
-            bootstrap_servers=kafka_config["bootstrap_servers"],
+            bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
             key="cms.key",
             producer_config=kafka_config["runengine_producer_config"],
         )
@@ -101,8 +101,12 @@ class CMSBaseAgent(Agent, ABC):
         return dict(
             kafka_consumer=kafka_consumer,
             kafka_producer=kafka_producer,
-            tiled_data_node=tiled.client.from_profile(f"{beamline_tla}_bluesky_sandbox"),
-            tiled_agent_node=tiled.client.from_profile(f"{beamline_tla}_bluesky_sandbox"),
+            tiled_data_node=tiled.client.from_uri(
+                f"https://tiled.nsls2.bnl.gov/api/v1/node/metadata/{beamline_tla}/bluesky_sandbox"
+            ),
+            tiled_agent_node=tiled.client.from_uri(
+                f"https://tiled.nsls2.bnl.gov/api/v1/node/metadata/{beamline_tla}/bluesky_sandbox"
+            ),
             qserver=qs,
         )
 
