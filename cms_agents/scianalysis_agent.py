@@ -14,7 +14,7 @@ from tiled.client import from_profile
 
 
 
-# SciAnalysis
+# SciAnalysis setup
 ########################################
 import sys
 SciAnalysis_PATH='/nsls2/data/cms/legacy/xf11bm/software/SciAnalysis/'
@@ -86,6 +86,10 @@ protocols = [
     Protocols.metadata_extract(patterns=patterns) ,
     ]
     
+
+
+# End SciAnalysis setup
+########################################
 
 
 
@@ -248,6 +252,10 @@ def respond_to_stop_with_reduced(consumer_topic: str, testing: bool = False):
             f"contents: {pprint.pformat(doc)}\n"
         )
         if name == "stop":
+            # wait briefly for the filesystem to collect itself
+            print("taking a nap!")
+            ttime.sleep(1)
+            print("I'm awake!")
             # look up the results of this run
             run_start_id = doc["run_start"]
             print(f"found run_start id {run_start_id}")
