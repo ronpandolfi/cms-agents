@@ -26,7 +26,7 @@ class SequentialAgent(CMSSequentialAgent):
         )
 
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:
-        return "agent_feeback_plan", [point], dict()
+        return "agent_feedback_plan", [point], dict()
 
 
 agent = SequentialAgent(sequence=[0.0, 5.0, 10.0, 15.0, 20.0])

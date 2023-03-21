@@ -18,7 +18,7 @@ class SingleTaskAgent(CMSSingleTaskAgent):
         super().__init__(bounds=bounds, independent_key=independent_key, target_key=target_key, **kwargs)
 
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:
-        return "agent_feeback_plan", [point], dict()
+        return "agent_feedback_plan", [point], dict()
 
 
 agent = SingleTaskAgent([0.0, 50.0], report_on_tell=False, ask_on_tell=False)
