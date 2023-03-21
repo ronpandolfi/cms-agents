@@ -27,7 +27,7 @@ class SingleTaskAgent(CMSSingleTaskAgent):
         )
 
 
-agent = SingleTaskAgent([0.0, 50.0], report_on_tell=False, ask_on_tell=False)
+agent = SingleTaskAgent(bounds=[0.0, 50.0], report_on_tell=False, ask_on_tell=False)
 
 
 @startup_decorator
