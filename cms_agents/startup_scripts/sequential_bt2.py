@@ -21,7 +21,8 @@ class SequentialAgent(CMSSequentialAgent):
             independent_key=independent_key,
             target_key=target_key,
             sequence=sequence,
-            relative_bounds=relative_bounds**kwargs
+            relative_bounds=relative_bounds,
+            **kwargs
         )
 
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:

@@ -80,7 +80,7 @@ class CMSBaseAgent(Agent, ABC):
         kafka_config = nslsii.kafka_utils._read_bluesky_kafka_config_file(
             config_file_path="/etc/bluesky/kafka.yml"
         )
-        qs = REManagerAPI(zmq_control_addr="tcp://xf11bm-ws1.nsls2.bnl.local:60615")
+        qs = REManagerAPI(zmq_control_addr="tcp://xf11bm-qsrv1:60615")
 
         kafka_consumer = AgentConsumer(
             topics=[
