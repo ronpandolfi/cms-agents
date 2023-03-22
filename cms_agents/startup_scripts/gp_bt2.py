@@ -28,6 +28,9 @@ class SingleTaskAgent(CMSSingleTaskAgent):
             and self.target_key in self.exp_catalog[uid].primary.data.keys()
         )
 
+    def name(self) -> str:
+        return "AgentAndrei"
+
 
 agent = SingleTaskAgent(bounds=[0.0, 20.0], report_on_tell=False, ask_on_tell=False)
 
