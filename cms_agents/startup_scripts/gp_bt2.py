@@ -28,6 +28,7 @@ class SingleTaskAgent(CMSSingleTaskAgent):
             and self.target_key in self.exp_catalog[uid].primary.data.keys()
         )
 
+    @property
     def name(self) -> str:
         return "AgentAndrei"
 
