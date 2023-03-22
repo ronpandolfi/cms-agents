@@ -46,3 +46,4 @@ def shutdown_agent():
 
 
 register_variable("tell cache", agent, "tell_cache")
+register_variable("agent name", agent, "instance_name")
