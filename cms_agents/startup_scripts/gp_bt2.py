@@ -26,6 +26,9 @@ class SingleTaskAgent(CMSSingleTaskAgent):
             and self.target_key in self.exp_catalog[uid].primary.data.keys()
         )
 
+    def server_registrations(self) -> None:
+        return
+
 
 agent = SingleTaskAgent(bounds=[0.0, 50.0], report_on_tell=False, ask_on_tell=False)
 
