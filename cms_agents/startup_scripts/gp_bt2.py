@@ -18,6 +18,8 @@ class SingleTaskAgent(CMSSingleTaskAgent):
         super().__init__(bounds=bounds, independent_key=independent_key, target_key=target_key, **kwargs)
 
     def measurement_plan(self, point: ArrayLike) -> Tuple[str, List, dict]:
+        if isinstance(point, list):
+            point = point[0]
         return "agent_feedback_plan", [point], dict()
 
     def trigger_condition(self, uid):
