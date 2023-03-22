@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from bluesky_adaptive.server import shutdown_decorator, startup_decorator
+from bluesky_adaptive.server import register_variable, shutdown_decorator, startup_decorator
 from numpy.typing import ArrayLike
 
 from cms_agents.agents import CMSSingleTaskAgent
@@ -38,3 +38,6 @@ def startup():
 @shutdown_decorator
 def shutdown_agent():
     return agent.stop()
+
+
+register_variable("tell cache", agent, "tell_cache")
