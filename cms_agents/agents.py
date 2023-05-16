@@ -80,20 +80,20 @@ class CMSBaseAgent(Agent, ABC):
         kafka_config = nslsii.kafka_utils._read_bluesky_kafka_config_file(
             config_file_path="/etc/bluesky/kafka.yml"
         )
-        qs = REManagerAPI(zmq_control_addr="tcp://xf11bm-ws1.nsls2.bnl.local:60615")
+        qs = REManagerAPI(zmq_control_addr="tcp://xf11bm-qsrv1:60615")
 
         kafka_consumer = AgentConsumer(
             topics=[
                 f"{beamline_tla}.bluesky.reduced.documents",
             ],
             consumer_config=kafka_config["runengine_producer_config"],
-            bootstrap_servers=kafka_config["bootstrap_servers"],
+            bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
             group_id=f"echo-{beamline_tla}-{str(uuid.uuid4())[:8]}",
         )
 
         kafka_producer = Publisher(
             topic=f"{beamline_tla}.bluesky.adjudicators",
-            bootstrap_servers=kafka_config["bootstrap_servers"],
+            bootstrap_servers=",".join(kafka_config["bootstrap_servers"]),
             key="cms.key",
             producer_config=kafka_config["runengine_producer_config"],
         )
@@ -101,8 +101,12 @@ class CMSBaseAgent(Agent, ABC):
         return dict(
             kafka_consumer=kafka_consumer,
             kafka_producer=kafka_producer,
-            tiled_data_node=tiled.client.from_profile(f"{beamline_tla}_bluesky_sandbox"),
-            tiled_agent_node=tiled.client.from_profile(f"{beamline_tla}_bluesky_sandbox"),
+            tiled_data_node=tiled.client.from_uri(
+                f"https://tiled.nsls2.bnl.gov/api/v1/node/metadata/{beamline_tla}/bluesky_sandbox"
+            ),
+            tiled_agent_node=tiled.client.from_uri(
+                f"https://tiled.nsls2.bnl.gov/api/v1/node/metadata/{beamline_tla}/bluesky_sandbox"
+            ),
             qserver=qs,
         )
 
