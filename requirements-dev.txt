@@ -11,6 +11,7 @@ black
 isort
 nbstripout
 pre-commit-hooks
+databroker>=2.0.0.b22
 # These are dependencies of various sphinx extensions for documentation.
 ipython
 matplotlib
