@@ -3,3 +3,4 @@ bluesky-adaptive
 nslsii
 fastapi
 botorch
+gpcam
