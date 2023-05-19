@@ -65,7 +65,7 @@ def replay_runs(produce, replay_reduced_runs):
                     scan_ids = last_scan_ids
 
                 for scan_id in scan_ids:
-                    if re.match("\d+", scan_id):
+                    if re.match("^\d+$", scan_id):
                         scan_id = int(scan_id)
                     else:
                         # scan_id is a UUID
