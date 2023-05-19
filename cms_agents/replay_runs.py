@@ -76,7 +76,7 @@ def replay_runs(produce, replay_reduced_runs):
                         message_count = 0
                         for name, document in cms_client[scan_id].documents():
                             # print(f"  producing message with {name} document")
-                            print(".", end=None)
+                            print(".", end="")
                             bluesky_document_producer(name, document)
                             message_count += 1
                         bluesky_document_producer.flush()
