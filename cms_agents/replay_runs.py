@@ -60,7 +60,7 @@ def replay_runs(produce, replay_reduced_runs):
                 print("all done!")
                 break
             else:
-                if scan_ids == ".":
+                if scan_ids == ["."]:
                     print(f"  replaying '{last_scan_ids}'")
                     scan_ids = last_scan_ids
 
