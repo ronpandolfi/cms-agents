@@ -70,13 +70,18 @@ def replay_runs(produce, replay_reduced_runs):
                     else:
                         # scan_id is a UUID
                         pass
-                    print(f"  replaying scan id {scan_id}")
+                    print(f"  replaying {scan_id}")
                     print(cms_client[scan_id].metadata["summary"])
                     if produce:
+                        message_count = 0
                         for name, document in cms_client[scan_id].documents():
-                            print(f"  producing message with {name} document")
+                            # print(f"  producing message with {name} document")
+                            print(".", end=None)
                             bluesky_document_producer(name, document)
+                            message_count += 1
                         bluesky_document_producer.flush()
+                        print()
+                        print(f"  produced {message_count} messages")
                     else:
                         print("  no messages produced")
                 
