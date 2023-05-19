@@ -1,4 +1,5 @@
 import argparse
+import re
 
 from bluesky_kafka import Publisher
 from nslsii.kafka_utils import _read_bluesky_kafka_config_file
@@ -60,13 +61,19 @@ def replay_runs(produce, replay_reduced_runs):
                 break
             else:
                 if scan_ids == ".":
-                    print(f"replaying '{last_scan_ids}'")
+                    print(f"  replaying '{last_scan_ids}'")
                     scan_ids = last_scan_ids
 
                 for scan_id in scan_ids:
-                    print(f"replaying scan id {scan_id}")
+                    if re.match("\d+", scan_id):
+                        scan_id = int(scan_id)
+                    else:
+                        # scan_id is a UUID
+                        pass
+                    print(f"  replaying scan id {scan_id}")
+                    print(cms_client[scan_id].metadata["summary"])
                     if produce:
-                        for name, document in cms_client[int(scan_id)].documents():
+                        for name, document in cms_client[scan_id].documents():
                             print(f"  producing message with {name} document")
                             bluesky_document_producer(name, document)
                         bluesky_document_producer.flush()
