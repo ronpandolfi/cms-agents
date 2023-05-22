@@ -139,7 +139,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
                 self.nlc = NonlinearConstraint(g, 0, np.inf)
 
         else:
-            self.auto_experimenter.gp_optimizer.tell(x=x_data, y=y_data, variances=(0.1 * np.ones_like(y.shape)))
+            self.gp_optimizer.tell(x=x_data, y=y_data, variances=(0.1 * np.ones_like(y.shape)))
         return dict(independent_variable=x, observable=y)
 
     def _retrain_gp(self) -> bool:
