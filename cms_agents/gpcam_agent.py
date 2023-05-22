@@ -9,7 +9,7 @@ from cms_agents.agents import CMSBaseAgent
 
 initial_ask_rng = np.random.default_rng(20230518)
 
-## setting up parameters
+#  setting up parameters
 # motor speed in x, x here is the "other" dimension (in 2d) that we can freely move through
 v = 0.1  # in unit [x per second]
 
@@ -31,10 +31,10 @@ init_N = 10  # don't go too low here
 
 hps_bounds = np.array(
     [[0.0001, 10.0], [0.01, 10.0], [0.01, 10.0 * end_of_time]]
-)  ##set up the hyperparameter bounds
+)  # set up the hyperparameter bounds
 
-## this is where the communication with the instrument is defined, the acquisition function,
-## the kernel and all other GP-related things
+#  this is where the communication with the instrument is defined, the acquisition function,
+#  the kernel and all other GP-related things
 
 
 # we may set up a user-defined acquisition function, but we can also use a standard one provided by gpCAM
@@ -45,7 +45,7 @@ def acq_func(x, obj):
     return np.sqrt(cov)
 
 
-# Constrained optimization sometimes fails and so, as a safety net, we assign really high costs to past measurements.
+# Constrained optimization sometimes fails and so, as safety net, we assign really high costs to past measurements.
 # Otherwise costs just rise with how long we have to wait for the measurement to occur
 def cost(origin, x, arguments=None):
     if origin[1] > x[0, 1]:
@@ -70,6 +70,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
         self.bounds = bounds
         self.gp_optimizer = GPOptimizer(2, bounds)
         self.gp_optimizer_initialized = False
+        self._acq_fun_str = "shannon_ig"
 
     # the parent class trigger_condition() always returns True
     # this agent should respond to every run, so this is what we want
@@ -177,7 +178,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
             ask_result = self.auto_experimenter.gp_optimizer.ask(
                 position=self.current_position,
                 n=batch_size,
-                acquisition_function="shannon_ig",  ##you can use your own acqisition function here
+                acquisition_function=self.acquisition_function,  # you can use your own acqisition function here
                 bounds=None,
                 pop_size=20,
                 max_iter=20,
@@ -197,5 +198,19 @@ class CMSgpCAMAgent(CMSBaseAgent):
             ],
             # this must be a sequence so unpack rows of
             # ask_result["x"] into a list
+            # TODO: This unpacking may be uneccessary (either the row behavior satisfies the need for sequence, or
+            # Sequence is the wrong typing requirement).
             [suggested_x for suggested_x in ask_result["x"]],
         )
+
+    @property
+    def acquisition_function(self):
+        return self._acq_fun_str
+
+    @acquisition_function.setter
+    def acquisition_function(self, value: str):
+        self._acq_fun_str = value
+
+    def server_registrations(self):
+        self._register_property("acquisition_function")
+        return super().server_registrations()
