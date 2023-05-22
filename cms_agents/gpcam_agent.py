@@ -140,12 +140,16 @@ class CMSgpCAMAgent(CMSBaseAgent):
 
         else:
             self.auto_experimenter.gp_optimizer.tell(x=x_data, y=y_data, variances=(0.1 * np.ones_like(y.shape)))
-            # don't forget about the initial data
-            if len(self.independent_cache) in [15, 20, 25]:
-                print("training gp_optimizer")
-                self.gp_optimizer.train_gp(hps_bounds)
-
         return dict(independent_variable=x, observable=y)
+
+    def _retrain_gp(self) -> bool:
+        """Method to determine interval on which to retrain GP"""
+        if not self.gp_optimizer_initialized:
+            return False
+        elif len(self.tell_cache) % 5 == 0 and len(self.tell_cache) > 10:  # Train at 15/20/etc
+            return True
+        else:
+            return False
 
     def ask(self, batch_size) -> Tuple[Sequence[Dict[str, ArrayLike]], Sequence[ArrayLike]]:
         """
@@ -167,7 +171,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
               'opt_obj': None
             }
         """
-
+        latest_data = self.tell_cache[-1]
         if not self.gp_optimizer_initialized:
             ask_result = dict(
                 x=initial_ask_rng.uniform(low=self.bounds[:, 0], high=[1, time_buffer], size=(batch_size, 2))
@@ -175,6 +179,10 @@ class CMSgpCAMAgent(CMSBaseAgent):
             # we want the last "position" before initializing the gp_optimizer
             self.current_position = self.independent_cache[-1]
         else:
+            if self._retrain_gp():
+                print("training gp_optimizer")
+                self.gp_optimizer.train_gp(hps_bounds)
+
             ask_result = self.auto_experimenter.gp_optimizer.ask(
                 position=self.current_position,
                 n=batch_size,
@@ -191,7 +199,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
             [
                 dict(
                     suggestion=suggested_x,
-                    latest_data=self.tell_cache[-1],
+                    latest_data=latest_data,
                     cache_len=self.inputs.shape[0],
                 )
                 for suggested_x in ask_result["x"]
