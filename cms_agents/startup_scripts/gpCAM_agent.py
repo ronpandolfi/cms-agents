@@ -2,7 +2,7 @@ from bluesky_adaptive.server import register_variable, shutdown_decorator, start
 
 from cms_agents.gpcam_agent import CMSgpCAMAgent
 
-agent = CMSgpCAMAgent(report_on_tell=False, ask_on_tell=False)
+agent = CMSgpCAMAgent(report_on_tell=False, ask_on_tell=True)
 
 
 @startup_decorator
