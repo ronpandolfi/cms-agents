@@ -9,7 +9,7 @@ from cms_agents.agents import CMSBaseAgent
 
 initial_ask_rng = np.random.default_rng(20230518)
 
-## setting up parameters
+#  setting up parameters
 # motor speed in x, x here is the "other" dimension (in 2d) that we can freely move through
 v = 0.1  # in unit [x per second]
 
@@ -31,10 +31,10 @@ init_N = 10  # don't go too low here
 
 hps_bounds = np.array(
     [[0.0001, 10.0], [0.01, 10.0], [0.01, 10.0 * end_of_time]]
-)  ##set up the hyperparameter bounds
+)  # set up the hyperparameter bounds
 
-## this is where the communication with the instrument is defined, the acquisition function,
-## the kernel and all other GP-related things
+#  this is where the communication with the instrument is defined, the acquisition function,
+#  the kernel and all other GP-related things
 
 
 # we may set up a user-defined acquisition function, but we can also use a standard one provided by gpCAM
@@ -45,7 +45,7 @@ def acq_func(x, obj):
     return np.sqrt(cov)
 
 
-# Constrained optimization sometimes fails and so, as a safety net, we assign really high costs to past measurements.
+# Constrained optimization sometimes fails and so, as safety net, we assign really high costs to past measurements.
 # Otherwise costs just rise with how long we have to wait for the measurement to occur
 def cost(origin, x, arguments=None):
     if origin[1] > x[0, 1]:
@@ -70,6 +70,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
         self.bounds = bounds
         self.gp_optimizer = GPOptimizer(2, bounds)
         self.gp_optimizer_initialized = False
+        self._acq_fun_str = "shannon_ig"
 
     # the parent class trigger_condition() always returns True
     # this agent should respond to every run, so this is what we want
@@ -139,12 +140,16 @@ class CMSgpCAMAgent(CMSBaseAgent):
 
         else:
             self.auto_experimenter.gp_optimizer.tell(x=x_data, y=y_data, variances=(0.1 * np.ones_like(y.shape)))
-            # don't forget about the initial data
-            if len(self.independent_cache) in [15, 20, 25]:
-                print("training gp_optimizer")
-                self.gp_optimizer.train_gp(hps_bounds)
-
         return dict(independent_variable=x, observable=y)
+
+    def _retrain_gp(self) -> bool:
+        """Method to determine interval on which to retrain GP"""
+        if not self.gp_optimizer_initialized:
+            return False
+        elif len(self.tell_cache) % 5 == 0 and len(self.tell_cache) > 10:  # Train at 15/20/etc
+            return True
+        else:
+            return False
 
     def ask(self, batch_size) -> Tuple[Sequence[Dict[str, ArrayLike]], Sequence[ArrayLike]]:
         """
@@ -166,7 +171,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
               'opt_obj': None
             }
         """
-
+        latest_data = self.tell_cache[-1]
         if not self.gp_optimizer_initialized:
             ask_result = dict(
                 x=initial_ask_rng.uniform(low=self.bounds[:, 0], high=[1, time_buffer], size=(batch_size, 2))
@@ -174,10 +179,14 @@ class CMSgpCAMAgent(CMSBaseAgent):
             # we want the last "position" before initializing the gp_optimizer
             self.current_position = self.independent_cache[-1]
         else:
+            if self._retrain_gp():
+                print("training gp_optimizer")
+                self.gp_optimizer.train_gp(hps_bounds)
+
             ask_result = self.auto_experimenter.gp_optimizer.ask(
                 position=self.current_position,
                 n=batch_size,
-                acquisition_function="shannon_ig",  ##you can use your own acqisition function here
+                acquisition_function=self.acquisition_function,  # you can use your own acqisition function here
                 bounds=None,
                 pop_size=20,
                 max_iter=20,
@@ -190,12 +199,26 @@ class CMSgpCAMAgent(CMSBaseAgent):
             [
                 dict(
                     suggestion=suggested_x,
-                    latest_data=self.tell_cache[-1],
+                    latest_data=latest_data,
                     cache_len=self.inputs.shape[0],
                 )
                 for suggested_x in ask_result["x"]
             ],
             # this must be a sequence so unpack rows of
             # ask_result["x"] into a list
+            # TODO: This unpacking may be uneccessary (either the row behavior satisfies the need for sequence, or
+            # Sequence is the wrong typing requirement).
             [suggested_x for suggested_x in ask_result["x"]],
         )
+
+    @property
+    def acquisition_function(self):
+        return self._acq_fun_str
+
+    @acquisition_function.setter
+    def acquisition_function(self, value: str):
+        self._acq_fun_str = value
+
+    def server_registrations(self):
+        self._register_property("acquisition_function")
+        return super().server_registrations()
