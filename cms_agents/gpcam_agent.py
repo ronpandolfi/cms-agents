@@ -93,7 +93,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
         if suggested_epoch_time > self.expiration_time + self.earliest_known_time:
             return "agent_stop_sample", [], {}
         else:
-            return "agent_feedback_time_plan", [x_position, suggested_epoch_time], {"align": True, "md": {}}
+            return "agent_feedback_time_plan", [x_position, suggested_epoch_time], {"align": False, "md": {}}
 
     def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
         """Unpack information from the "reduction" step
