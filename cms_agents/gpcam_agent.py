@@ -1,3 +1,4 @@
+from logging import getLogger
 from typing import Dict, Sequence, Tuple, Union
 
 import numpy as np
@@ -6,7 +7,6 @@ from numpy.typing import ArrayLike
 from scipy.optimize import NonlinearConstraint
 
 from cms_agents.agents import CMSBaseAgent
-from logging import getLogger
 
 logger = getLogger("cms_agents.gpcam_agent")
 # initial_ask_rng = np.random.default_rng(20230518)
@@ -60,7 +60,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
     These agents should respond to messages with topic "cms.bluesky.reduced.documents".
     """
 
-    def __init__(self, min_req_points: int = 5, expiration_time: float = 30 * 60,  **kwargs):
+    def __init__(self, min_req_points: int = 5, expiration_time: float = 30 * 60, **kwargs):
         _default_kwargs = self.get_beamline_objects()
         _default_kwargs.update(**kwargs)
         super().__init__(independent_key=None, target_key=None, **_default_kwargs)
@@ -71,9 +71,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
         self.bounds = np.array([[34.2, 51.9], [0, 1.0 * expiration_time]])
         logger.info(f"bounds: {self.bounds}")
         # Noise, X length scale, time length
-        self.hps_bounds = np.array(
-            [[0.0001, 10.0], [0.01, 100.0], [0.01, 2.0 * expiration_time]]
-            )
+        self.hps_bounds = np.array([[0.0001, 10.0], [0.01, 100.0], [0.01, 2.0 * expiration_time]])
         self.gp_optimizer = GPOptimizer(2, self.bounds)
         self.gp_optimizer_initialized = False
         self._acq_fun_str = "shannon_ig"
@@ -82,7 +80,6 @@ class CMSgpCAMAgent(CMSBaseAgent):
         self._expiration_time = expiration_time
         self._min_required_points = min_req_points
 
-
     # the parent class trigger_condition() always returns True
     # this agent should respond to every run, so this is what we want
 
@@ -90,13 +87,13 @@ class CMSgpCAMAgent(CMSBaseAgent):
         """Point is array of 2 values, x and time where x is a position proxy for temperature."""
 
         x_position = point[0]
-        time_from_start =  point[1]  
-        epoch_time = self.earliest_known_time + time_from_start
+        time_from_start = point[1]
+        suggested_epoch_time = self.earliest_known_time + time_from_start
 
-        if time_from_start > self.expiration_time:
-            return 'agent_stop_sample', [], {}
+        if suggested_epoch_time > self.expiration_time + self.earliest_known_time:
+            return "agent_stop_sample", [], {}
         else:
-            return 'agent_feedback_time_plan', [x_position, epoch_time],  {'align':True, 'md':{}}
+            return "agent_feedback_time_plan", [x_position, suggested_epoch_time], {"align": True, "md": {}}
 
     def unpack_run(self, run) -> Tuple[Union[float, ArrayLike], Union[float, ArrayLike]]:
         """Unpack information from the "reduction" step
@@ -108,18 +105,20 @@ class CMSgpCAMAgent(CMSBaseAgent):
         # return super().unpack_run(run)
 
         # this is from the previous beamtime
-        measurement_epoch_time = float(run.primary.data['time'].read())
-        _sample_clock_zero_readval = run.metadata['start']['raw_start']['sample_clock_zero']
+        measurement_epoch_time = float(run.primary.data["time"].read())
+        _sample_clock_zero_readval = run.metadata["start"]["raw_start"]["sample_clock_zero"]
         measurement_rel_time = measurement_epoch_time - _sample_clock_zero_readval
         measurement_x = run.metadata["start"]["raw_start"]["sample_x"]
 
         value = run.primary.data["linecut_qr_fit__fit_peaks_grain_size1"].read()
-        
+
         if self.earliest_known_time is None:
             self.earliest_known_time = _sample_clock_zero_readval
         else:
             if _sample_clock_zero_readval != self.earliest_known_time:
-                logger.warning(f"Sample clocks are out of sync, storing the most recent {_sample_clock_zero_readval}")
+                logger.warning(
+                    f"Sample clocks are out of sync, storing the most recent {_sample_clock_zero_readval}"
+                )
             self.earliest_known_time = _sample_clock_zero_readval
 
         return (np.array([measurement_x, measurement_rel_time]), value)
@@ -139,7 +138,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
 
 
         """
-        
+
         self.independent_cache.append(x)
         self.observable_cache.append(y)
 
@@ -153,7 +152,9 @@ class CMSgpCAMAgent(CMSBaseAgent):
         """Method to determine interval on which to retrain GP"""
         if not self.gp_optimizer_initialized:
             return False
-        elif len(self.tell_cache) % 5 == 0 and len(self.tell_cache) > self._min_required_points:  # Train at 15/20/etc
+        elif (
+            len(self.tell_cache) % 5 == 0 and len(self.tell_cache) > self._min_required_points
+        ):  # Train at 15/20/etc
             return True
         else:
             return False
@@ -170,7 +171,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
 
     def ask(self, batch_size) -> Tuple[Sequence[Dict[str, ArrayLike]], Sequence[ArrayLike]]:
         """
-        Train GP, initialize if needed, call ask. 
+        Train GP, initialize if needed, call ask.
 
         TODO: provide additional parameters to gp_optimizer.ask()
           such as acquisition_function, method, etc
@@ -204,11 +205,13 @@ class CMSgpCAMAgent(CMSBaseAgent):
 
                 self.nlc = NonlinearConstraint(self._constraint_function, 0, np.inf)
             else:
-                raise RuntimeError(f"Insufficient data in GPCam, GP not initialized. Tell Cache {len(self.tell_cache)} members.")
+                raise RuntimeError(
+                    f"Insufficient data in GPCam, GP not initialized. Tell Cache {len(self.tell_cache)} members."
+                )
         elif self._retrain_gp():
             logger.info("training gp_optimizer")
             self.gp_optimizer.train_gp(self.hps_bounds)
-        
+
         self.current_position = self.independent_cache[-1]
         # we want the last "position" before initializing the gp_optimizer
         ask_result = self.gp_optimizer.ask(
@@ -225,11 +228,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
 
         return (
             [
-                dict(
-                    suggestion=suggested_x,
-                    latest_data=latest_data,
-                    cache_len=len(self.tell_cache)
-                )
+                dict(suggestion=suggested_x, latest_data=latest_data, cache_len=len(self.tell_cache))
                 for suggested_x in ask_result["x"]
             ],
             # this must be a sequence so unpack rows of
@@ -251,7 +250,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
     def expiration_time(self):
         """Expiration time for experiment in seconds"""
         return self._expiration_time
-    
+
     @expiration_time.setter
     def expiration_time(self, value: float):
         self._expiration_time = value
@@ -259,7 +258,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
     @property
     def known_independent_data(self):
         return self.independent_cache
-    
+
     @property
     def known_observable_data(self):
         return self.observable_cache
@@ -269,4 +268,4 @@ class CMSgpCAMAgent(CMSBaseAgent):
         self._register_property("expiration_time")
         self._register_property("known_independent_data")
         self._register_property("known_independent_data")
-        return super(CMSBaseAgent,self).server_registrations()
+        return super(CMSBaseAgent, self).server_registrations()
