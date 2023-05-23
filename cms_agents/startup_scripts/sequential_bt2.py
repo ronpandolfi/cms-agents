@@ -3,6 +3,8 @@ from typing import List, Sequence, Tuple, Union
 from bluesky_adaptive.server import shutdown_decorator, startup_decorator
 from numpy.typing import ArrayLike
 
+import numpy as np
+
 from cms_agents.agents import CMSSequentialAgent
 
 
@@ -35,7 +37,7 @@ class SequentialAgent(CMSSequentialAgent):
         )
 
 
-agent = SequentialAgent(sequence=[0.0, 5.0, 10.0, 15.0, 20.0])
+agent = SequentialAgent(sequence=list(np.linspace(3, 22, 61)) + [-10])
 
 
 @startup_decorator
@@ -46,3 +48,11 @@ def startup():
 @shutdown_decorator
 def shutdown_agent():
     return agent.stop()
+
+
+'''
+ipython -i source/cms-agents/cms_agents/startup_scripts/sequential_bt2.py 
+
+
+'''
+
