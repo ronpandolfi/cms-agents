@@ -196,7 +196,7 @@ class CMSgpCAMAgent(CMSBaseAgent):
             # ask_result = dict(
             #     x=initial_ask_rng.uniform(low=self.bounds[:, 0], high=[1, time_buffer], size=(batch_size, 2))
             # )
-            if len(self.tell_cache) > self._min_required_points:
+            if len(self.tell_cache) >= self._min_required_points:
                 self.gp_optimizer.init_gp(np.ones(3))
                 self.gp_optimizer.train_gp(self.hps_bounds)
                 self.gp_optimizer.init_cost(cost, dict())
